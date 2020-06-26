@@ -1,0 +1,58 @@
+version: "3.7"
+
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - 8000:80 # To change host access port number
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./laravel:/var/www/html # To change project folder name
+    depends_on:
+      - php-fpm
+      - nodeJs
+
+  php-fpm:
+    build:
+      context: ./php-fpm
+      target: dev
+    volumes:
+      - ./php-fpm/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+      - ./laravel:/var/www/html # To change project folder name
+    depends_on:
+      - mysql
+
+  nodeJs:
+    image: node:14.3.0-alpine3.10
+    working_dir: /var/www/html
+    volumes:
+      - ./laravel:/var/www/html
+
+  mysql:
+    image: mysql:latest
+    ports:
+      - 3306:3306 # To change mysql port number
+    environment:
+      MYSQL_ROOT_PASSWORD: rootPass
+      MYSQL_USER: user # To change database user
+      MYSQL_PASSWORD: password  # To change database user password
+      MYSQL_DATABASE: laravel  # To change database name
+    volumes:
+      - ./mysql/custom.cnf:/etc/mysql/conf.d/custom.cnf
+      - db-data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: dev_pma
+    links:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    restart: always
+    ports:
+      - 8183:80
+
+volumes:
+  db-data:
